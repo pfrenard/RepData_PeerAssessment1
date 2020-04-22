@@ -1,0 +1,66 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Loading and preprocessing the data
+
+Let's load data from zip file using readr library.
+```{r echo=TRUE}
+library("readr")
+dataset <- read_delim("activity.zip",delim=",")
+
+print(dataset)
+```
+
+
+
+## What is mean total number of steps taken per day?
+We are going to group by date and do a sum of steps per date.
+
+```{r echo=TRUE}
+library("dplyr")
+
+sum_by_date <- dataset %>% group_by(date) %>% summarize_all(sum)
+
+```
+
+
+Then we use ggplot2 to plot number of steps each day.
+```{r echo=TRUE}
+library("ggplot2")
+
+p <- ggplot(sum_by_date, aes(x=date,y=steps) ) 
+p <- p + geom_col()
+p <- p + xlab("Dates") + ylab("Steps") 
+p <- p + ggtitle("Sum of steps per day") 
+
+print(p)
+```
+
+Now let's find mean and median
+```{r echo=TRUE}
+my_mean <- mean(sum_by_date$steps,na.rm=TRUE)
+my_median <- median(sum_by_date$steps,na.rm=TRUE)
+print(my_mean)
+print(my_median)
+
+```
+
+Mean for total steps per day is `r format(my_mean,nsmall=2)`.  
+Median for total steps per day is `r format(my_median,nsmall=2)`.  
+
+
+
+## What is the average daily activity pattern?
+
+
+
+## Imputing missing values
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
