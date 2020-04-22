@@ -24,7 +24,7 @@ We are going to group by date and do a sum of steps per date.
 ```{r echo=TRUE}
 library("dplyr")
 
-sum_by_date <- dataset %>% group_by(date) %>% summarize_all(sum)
+sum_by_date <- dataset %>% group_by(date) %>% summarise(sum_steps=sum(steps, na.rm=TRUE))
 
 ```
 
@@ -33,7 +33,7 @@ Then we use ggplot2 to plot number of steps each day.
 ```{r echo=TRUE}
 library("ggplot2")
 
-p <- ggplot(sum_by_date, aes(x=date,y=steps) ) 
+p <- ggplot(sum_by_date, aes(x=date,y=sum_steps) ) 
 p <- p + geom_col()
 p <- p + xlab("Dates") + ylab("Steps") 
 p <- p + ggtitle("Sum of steps per day") 
@@ -57,6 +57,47 @@ Median for total steps per day is `r format(my_median,nsmall=2)`.
 
 ## What is the average daily activity pattern?
 
+We are going to group by interval and find the average number of steps for each interval.
+As there are 288 intervals of 5 minutes in a day (60*24 minutes / 5 = 288).
+We should find 288 interval in the generated data.
+
+```{r echo=TRUE}
+
+avg_by_interval <- dataset %>% group_by(interval) %>% summarise(avg_steps=mean(steps, na.rm=TRUE))
+summary(avg_by_interval)
+print(avg_by_interval)
+
+```
+
+
+Let's plot this data in a time series plot
+
+```{r echo=TRUE}
+
+p <- ggplot(avg_by_interval, aes(x=interval,y=avg_steps) ) 
+p <- p + geom_col()
+p <- p + xlab("Intervals") + ylab("Steps") 
+p <- p + ggtitle("Mean of steps per interval") 
+
+print(p)
+
+```
+
+Let's find the maximum average steps.
+
+```{r echo=TRUE}
+
+max_steps <- max(avg_by_interval$avg_steps)
+print(max_steps)
+
+max_row <- which.max(avg_by_interval$avg_steps)
+max_interval <- as.integer(avg_by_interval[max_row,][,1])
+
+
+```
+
+The maximum avergae steps per interval is  `r format(max_steps,nsmall=2)`.  
+The interval when it occures is `r format(max_interval)`. 
 
 
 ## Imputing missing values
