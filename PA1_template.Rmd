@@ -7,19 +7,235 @@ output:
 
 
 ## Loading and preprocessing the data
+### Let's load libraries here
+
+```{r echo=TRUE}
+library("readr")
+library("dplyr")
+library("ggplot2")
+library("gridExtra")
+
+```
+
+### Data load
+
+Let's load data from zip file using readr library.
+```{r echo=TRUE}
+dataset <- read_delim("activity.zip",delim=",")
+
+print(dataset)
+```
 
 
 
 ## What is mean total number of steps taken per day?
 
+### Initial grouping
+We are going to group by date and do a sum of steps per date.
+
+```{r echo=TRUE}
+
+sum_by_date <- dataset %>% group_by(date) %>% summarise(sum_steps=sum(steps, na.rm=TRUE))
+
+```
+
+### Plot sum of steps per day
+Then we use ggplot2 to plot number of steps each day.
+```{r echo=TRUE}
+
+p <- ggplot(sum_by_date, aes(x=date,y=sum_steps) ) 
+p <- p + geom_col()
+p <- p + xlab("Dates") + ylab("Steps") 
+p <- p + ggtitle("Sum of steps per day") 
+
+print(p)
+```
+
+### Mean and Median of sum of steps per day
+Now let's find mean and median
+```{r echo=TRUE}
+my_mean <- mean(sum_by_date$sum_steps,na.rm=TRUE)
+my_median <- median(sum_by_date$sum_steps,na.rm=TRUE)
+print(my_mean)
+print(my_median)
+
+```
+
+Mean for total steps per day is `r format(my_mean,nsmall=2)`.  
+Median for total steps per day is `r format(my_median,nsmall=2)`.  
+
 
 
 ## What is the average daily activity pattern?
 
+### Grouping by interval
+We are going to group by interval and find the average number of steps for each interval.
+As there are 288 intervals of 5 minutes in a day (60*24 minutes / 5 = 288).
+We should find 288 interval in the generated data.
+
+```{r echo=TRUE}
+
+avg_by_interval <- dataset %>% group_by(interval) %>% summarise(avg_steps=mean(steps, na.rm=TRUE))
+summary(avg_by_interval)
+print(avg_by_interval)
+
+```
+
+
+### Plot sum steps by interval
+Let's plot this data in a time series plot
+
+```{r echo=TRUE}
+
+p <- ggplot(avg_by_interval, aes(x=interval,y=avg_steps) ) 
+p <- p + geom_col()
+p <- p + xlab("Intervals") + ylab("Steps") 
+p <- p + ggtitle("Mean of steps per interval") 
+
+print(p)
+
+```
+
+
+### Maximum
+Let's find the maximum average steps.
+
+```{r echo=TRUE}
+
+max_steps <- max(avg_by_interval$avg_steps)
+print(max_steps)
+
+max_row <- which.max(avg_by_interval$avg_steps)
+max_interval <- as.integer(avg_by_interval[max_row,][,1])
+
+
+```
+
+The maximum avergae steps per interval is  `r format(max_steps,nsmall=2)`.  
+The interval when it occures is `r format(max_interval)`. 
 
 
 ## Imputing missing values
 
+### Is there any missing values ? 
+The dataset containes missing values:  
+
+```{r echo=TRUE}
+missing <- is.na(dataset$steps)
+
+n_missing <- sum(missing)
+
+```
+
+The total missing values for steps is `r format(n_missing)`.
+
+### Let's fill the gapes !
+
+We can replace these missing values by mean of the same interval. We allready have theses values from avg_by_interval.   
+Let's create a new dataset, with a new column named new_steps.  
+
+```{r echo=TRUE}
+
+newdataset <- dataset %>% mutate(new_steps=ifelse(is.na(steps),pull(avg_by_interval[interval,2]),steps) )
+
+print(newdataset)
+
+```
+
+
+### Sum of steps per day 
+
+Let's create a new group by dataset.
+```{r echo=TRUE}
+
+sum_by_date <- newdataset %>% group_by(date) %>% summarise(sum_steps=sum(new_steps, na.rm=TRUE))
+print(sum_by_date)
+
+```
+
+
+Then we use ggplot2 to plot number of steps each day.
+```{r echo=TRUE}
+
+p <- ggplot(sum_by_date, aes(x=date,y=sum_steps) ) 
+p <- p + geom_col()
+p <- p + xlab("Dates") + ylab("Steps") 
+p <- p + ggtitle("Sum of steps per day") 
+
+print(p)
+```
+
+
+### impact on Mean and Median 
+Now let's find mean and median
+```{r echo=TRUE}
+my_new_mean <- mean(sum_by_date$sum_steps,na.rm=TRUE)
+my_new_median <- median(sum_by_date$sum_steps,na.rm=TRUE)
+print(my_new_mean)
+print(my_new_median)
+
+```
+
+Mean for total steps per day is now `r format(my_new_mean,nsmall=2)` as it was `r format(my_mean,nsmall=2)`.  
+Median for total steps per day is now `r format(my_new_median,nsmall=2)` as it was `r format(my_median,nsmall=2)`.  
+
+
+The mean is changed by the following percentage: `r format(   100*(my_new_mean-my_mean)/my_mean   ,digits=3,nsmall=2)`.
+The impact is small.
+
+
+
+
+
+
+
+
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+### Create a new factor column containing 'day type'
+Let's create this new column with weekday or weekend values.
+
+```{r echo=TRUE}
+week_days <- c('Monday','Tuesday','Wednesday','Thursday','Friday')
+weekend_days <- c('Saturday','Sunday')
+
+new <- newdataset %>% mutate(day = factor( case_when( weekdays(date) %in% week_days ~ "Weekday",  weekdays(date) %in% weekend_days ~ "Weekend") )) 
+
+```
+
+And convert it to a factor.
+
+```{r echo=TRUE}
+new$day <- as.factor(new$day)
+print(new)
+
+```
+
+Let's group steps per day and interval and apply the mean to this groups.
+
+```{r echo=TRUE}
+avg_by_interval <- new %>% group_by(interval,day) %>% summarise(avg_steps=mean(new_steps, na.rm=TRUE))
+summary(avg_by_interval)
+print(avg_by_interval)
+
+```
+
+
+### Let's plot all that
+
+We will use ggplot2 with 2 facets, using day factor.
+
+```{r echo=TRUE}
+g <- ggplot(avg_by_interval, aes(x=interval,y=avg_steps) ) 
+g <- g + geom_line(alpha=1/2, color="blue") 
+g <- g + facet_wrap( . ~ day, nrow=2, ncol=1 ) 
+g <- g + theme_gray(base_family = "Avenir", base_size=10)
+g <- g + labs(x=" Interval ") + labs(y="Number of Steps" ) 
+
+print(g)
+```
+
+
+
