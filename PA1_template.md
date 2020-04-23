@@ -183,7 +183,7 @@ Let's plot this data in a time series plot
 
 ```r
 p <- ggplot(avg_by_interval, aes(x=interval,y=avg_steps) ) 
-p <- p + geom_col()
+p <- p + geom_line()
 p <- p + xlab("Intervals") + ylab("Steps") 
 p <- p + ggtitle("Mean of steps per interval") 
 
