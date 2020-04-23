@@ -5,6 +5,11 @@ output:
     keep_md: true
 ---
 
+## Information regarding this work
+
+This file has been written using RStudio and KnitR RStudio integration.  
+Figures files can be found into directory <code>PA1_template_files/figure-html</code>.
+
 
 ## Loading and preprocessing the data
 ### Let's load libraries here
@@ -34,18 +39,6 @@ library("dplyr")
 
 ```r
 library("ggplot2")
-library("gridExtra")
-```
-
-```
-## 
-## Attaching package: 'gridExtra'
-```
-
-```
-## The following object is masked from 'package:dplyr':
-## 
-##     combine
 ```
 
 ### Data load
@@ -85,7 +78,7 @@ print(dataset)
 ## 10    NA 2012-10-01       45
 ## # … with 17,558 more rows
 ```
-
+We have a new tibble with 17568 rows and 3 columns.
 
 
 ## What is mean total number of steps taken per day?
@@ -182,6 +175,7 @@ print(avg_by_interval)
 ## # … with 278 more rows
 ```
 
+We are good :)
 
 ### Plot sum steps by interval
 Let's plot this data in a time series plot
@@ -223,7 +217,7 @@ The interval when it occures is 835.
 
 ## Imputing missing values
 
-### Is there any missing values ? 
+### Are there any missing values ? 
 The dataset containes missing values:  
 
 
@@ -242,7 +236,9 @@ Let's create a new dataset, with a new column named new_steps.
 
 
 ```r
-newdataset <- dataset %>% mutate(new_steps=ifelse(is.na(steps),pull(avg_by_interval[interval,2]),steps) )
+newdataset <- dataset %>% mutate( new_steps = ifelse(is.na(steps),
+                                                     pull(avg_by_interval[interval,2]),
+                                                     steps) )
 
 print(newdataset)
 ```
@@ -263,11 +259,11 @@ print(newdataset)
 ## 10    NA 2012-10-01       45    0.943 
 ## # … with 17,558 more rows
 ```
-
+It worked :)
 
 ### Sum of steps per day 
 
-Let's create a new group by dataset.
+Let's create a new group by dataset using the new column instead of the oirginal one with missing values.
 
 ```r
 sum_by_date <- newdataset %>% group_by(date) %>% summarise(sum_steps=sum(new_steps, na.rm=TRUE))
@@ -306,8 +302,8 @@ print(p)
 ![](PA1_template_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 
-### impact on Mean and Median 
-Now let's find mean and median
+### Impact on Mean and Median 
+Now let's find mean and median for this new dataset.
 
 ```r
 my_new_mean <- mean(sum_by_date$sum_steps,na.rm=TRUE)
@@ -353,7 +349,9 @@ Let's create this new column with weekday or weekend values.
 week_days <- c('Monday','Tuesday','Wednesday','Thursday','Friday')
 weekend_days <- c('Saturday','Sunday')
 
-new <- newdataset %>% mutate(day = factor( case_when( weekdays(date) %in% week_days ~ "Weekday",  weekdays(date) %in% weekend_days ~ "Weekend") )) 
+new <- newdataset %>% mutate( day = factor( 
+                                    case_when( weekdays(date) %in% week_days ~ "Weekday",  
+                                               weekdays(date) %in% weekend_days ~ "Weekend") ) ) 
 ```
 
 And convert it to a factor.
@@ -381,11 +379,11 @@ print(new)
 ## # … with 17,558 more rows
 ```
 
-Let's group steps per day and interval and apply the mean to this groups.
+Let's group steps per day and interval and apply the mean function to this groups.
 
 
 ```r
-avg_by_interval <- new %>% group_by(interval,day) %>% summarise(avg_steps=mean(new_steps, na.rm=TRUE))
+avg_by_interval <- new %>% group_by(interval,day) %>% summarise( avg_steps = mean( new_steps, na.rm=TRUE ) )
 summary(avg_by_interval)
 ```
 
@@ -440,4 +438,4 @@ print(g)
 ![](PA1_template_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
 
 
-
+People are walking early and more in the morning ( to go to the office ? ) in the week days compare to weekend days.  People are also walking more in the day during week-end days.
